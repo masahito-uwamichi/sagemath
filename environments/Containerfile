@@ -1,0 +1,44 @@
+# SageMath Jupyter環境用のContainerfile
+FROM sagemath/sagemath:latest
+
+# 作業ディレクトリの設定
+WORKDIR /home/sage
+
+# 必要なパッケージのインストール
+USER root
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    wget \
+    vim \
+    && rm -rf /var/lib/apt/lists/*
+
+# Jupyter Labの設定
+USER sage
+RUN sage -pip install --upgrade pip
+RUN sage -pip install jupyterlab
+
+# Jupyter設定ディレクトリの作成
+RUN mkdir -p /home/sage/.jupyter
+
+# Jupyter設定ファイルの作成
+RUN sage -python -c "from jupyter_server.auth import passwd; print(passwd('sage'))" > /tmp/passwd.txt
+
+# Jupyter設定の生成
+RUN echo "c.ServerApp.ip = '0.0.0.0'" > /home/sage/.jupyter/jupyter_server_config.py && \
+    echo "c.ServerApp.port = 8888" >> /home/sage/.jupyter/jupyter_server_config.py && \
+    echo "c.ServerApp.open_browser = False" >> /home/sage/.jupyter/jupyter_server_config.py && \
+    echo "c.ServerApp.allow_root = True" >> /home/sage/.jupyter/jupyter_server_config.py && \
+    echo "c.ServerApp.notebook_dir = '/home/sage/notebooks'" >> /home/sage/.jupyter/jupyter_server_config.py
+
+# ノートブック用ディレクトリの作成
+RUN mkdir -p /home/sage/notebooks
+
+# ポートの公開
+EXPOSE 8888
+
+# ボリューム設定
+VOLUME ["/home/sage/notebooks"]
+
+# 起動コマンド
+CMD ["sage", "-n", "jupyter", "--ip=0.0.0.0", "--port=8888", "--no-browser", "--allow-root"]

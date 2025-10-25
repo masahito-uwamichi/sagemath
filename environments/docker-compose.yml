@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  sagemath-jupyter:
+    build:
+      context: .
+      dockerfile: Containerfile
+    container_name: sagemath-jupyter
+    ports:
+      - "8888:8888"
+    volumes:
+      - ../notebooks:/home/sage/notebooks
+      - ../data:/home/sage/data
+    environment:
+      - JUPYTER_ENABLE_LAB=yes
+    restart: unless-stopped
+    user: sage
+    working_dir: /home/sage
+    command: sage -n jupyter --ip=0.0.0.0 --port=8888 --no-browser --allow-root
+
+volumes:
+  notebooks:
+  data:
